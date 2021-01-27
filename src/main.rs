@@ -24,6 +24,6 @@ fn handle_connection(mut stream: TcpStream) {
 
 // How do I really observe what is going on at runtime?
 // I want to see the raw request - the whole thing.
-// Does that mena reading to a string?
+// Does that mean reading to a string?
 // What's the use of a buffer? Are there OS calls to the network stack?
 // The networking is all happening locally.
