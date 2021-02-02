@@ -1,29 +1,55 @@
 use std::io::prelude::*;
 use std::net::TcpListener;
-use std::net::TcpStream;
 
 fn main() {
-    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    let listener = TcpListener::bind("0.0.0.0:80").unwrap();
 
     for stream in listener.incoming() {
-        let stream = stream.unwrap();
+        let mut stream = stream.unwrap();
 
-        handle_connection(stream);
+        // Modern netowrk hardware has a "Direct Memory Access" (DMA) chip
+        // That can fill up some memory space, then notify that it is done?
+        // Where does that fit into this?
+        let mut buffer = [0; 1024];
+
+        stream.read(&mut buffer).unwrap();
+
+        println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
+
+        let contents = format!(
+r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Document</title>
+</head>
+<body style="color: red;">
+Hello World! Number: {} 🔥
+</body>
+</html>"#,
+            rand::random::<u8>()
+        );
+
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+            contents.len(),
+            contents
+        );
+
+        stream.write(response.as_bytes()).unwrap();
+        stream.flush().unwrap();
     }
 }
 
-// Technically the network is considered a device, and so are files
-// But we don't know the size of whatever is coming from the network.
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 16384];
+// What does it mean to "take ownership" here? Is not borrowed, but 'owned'.
+// That has to do with memory layout.
+// Is the "TcpStream" dropped from memory after this function is called?
+// Is this function blocking? If so, is there a maximum amount of time that would take?
 
-    stream.read(&mut buffer).unwrap();
+// This is mutable ownership?
 
-    println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
-}
+// fn handle_connection(mut stream: TcpStream) {
 
-// How do I really observe what is going on at runtime?
-// I want to see the raw request - the whole thing.
-// Does that mean reading to a string?
-// What's the use of a buffer? Are there OS calls to the network stack?
-// The networking is all happening locally.
+// }
